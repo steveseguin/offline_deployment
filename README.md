@@ -12,6 +12,8 @@ password: ninja
 
 If installing via scratch, the following is a sample script that might get you going. I'd recommend you run each block manually, a bit at a time, to catch any errors or user input requirements along the way.
 
+We will be using ports 443 and 8443, just in case you have those already in use, you may need to configure it yourself then.
+
 ```
 ### If using a Raspberry Pi, and if having issues updating
 sudo chmod 777 /etc/resolv.conf
