@@ -62,8 +62,8 @@ sudo systemctl restart vdoninja
 ## or start our server directly ..
 # sudo nodejs server.js
 
-
-## You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.
-## You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs
-
 ```
+
+You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.
+
+You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs
