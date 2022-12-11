@@ -1,6 +1,6 @@
 ## Guide + code to run VDO.Ninja without Internet on a local network
 
-This guide was tested on a Raspberry Pi with a clean RPI OS installed (the image of which is provided if desired; see further down the page)
+This guide was tested on a Raspberry Pi with a clean RPI OS installed ([the image of which is provided if desired](https://github.com/steveseguin/offline_deployment#rpi-provided-image-option))
 
 Included with this guide is a custom Node.js server script (express.js), along with a linux service file to auto-start things on boot, if needed. You can probably use the Node.js on its own, but it's only intended for offline use -- I haven't tested for public use.
 
@@ -74,7 +74,7 @@ You may need to download and install the cert https://192.168.XXX.YYY/cert.pem i
 
 I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse, or however.
 
-[Dwonload it here](https://drive.google.com/file/d/10WtVXUh7yHxWmdSaR95-E_M3pnUNUtvr/view?usp=sharing) ( 2.4-GB zipped )
+[Download it here](https://drive.google.com/file/d/10WtVXUh7yHxWmdSaR95-E_M3pnUNUtvr/view?usp=sharing) ( 2.4-GB zipped )
 
 The image uses the following user/pass combo:
 ```
