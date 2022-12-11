@@ -1,3 +1,5 @@
+## This guide + code allows for VDO.Ninja to run without Internet on a local network
+
 This guide was tested on a Raspberry Pi with a clean RPI OS installed.
 
 It's recommend you install the image with the Raspberry Pi Imager app, and enable SSH and WiFi via that app, if intending to connect those ways.
