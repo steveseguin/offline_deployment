@@ -1,31 +1,10 @@
-## This guide + code allows for VDO.Ninja to run without Internet on a local network
+## Guide + code to run VDO.Ninja without Internet on a local network
 
-This guide was tested on a Raspberry Pi with a clean RPI OS installed.
-
-It's recommend you install the image with the Raspberry Pi Imager app, and enable SSH and WiFi via that app, if intending to connect those ways.  
+This guide was tested on a Raspberry Pi with a clean RPI OS installed (the image of which is provided if desired; see further down the page)
 
 Included with this guide is a custom Node.js server script (express.js), along with a linux service file to auto-start things on boot, if needed. You can probably use the Node.js on its own, but it's only intended for offline use -- I haven't tested for public use.
 
-### RPI provided image option
-
-I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse, or however.
-
-[Dwonload it here](https://drive.google.com/file/d/10WtVXUh7yHxWmdSaR95-E_M3pnUNUtvr/view?usp=sharing) ( 2.4-GB zipped )
-
-The image uses the following user/pass combo:
-```
-username: vdo 
-password: ninja
-```
-
-It requires an 8-GB uSD card or larger; if it's too big, you'll need to PiShrink it down first using: https://ostechnix.com/pishrink-make-raspberry-pi-images-smaller/
-(I may get around to doing that in the future)
-
-Just burn the image following any RPi guide, login in, and get going.  Currently I think v22.10 (beta) is installed, so probably out of date. You can update, but if you do, you may need to run `sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.hostname+":8443";session\.customWSS = true;/' ./vdo.ninja/index.html` from the home user folder after, or manually update the index.html to point to the local wss server. Depending on how you update, it may not be needed though.
-
-You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.  Accept any SSL concerns or what not (see https://github.com/steveseguin/vdo.ninja/blob/develop/install.md#dealing-with-no-ssl-scenarios for more details)
-
-You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs. The required cert is located at https://192.168.XXX.YYY/cert.pem for easy download.
+There is no STUN or TURN server provided in this guide/install, as those are probably not needed if using just over a LAN.
 
 ### Installing from scratch 
 
@@ -90,3 +69,25 @@ ifconfig
 You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.  Accept any SSL concerns or what not (see https://github.com/steveseguin/vdo.ninja/blob/develop/install.md#dealing-with-no-ssl-scenarios for more details)
 
 You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs. The required cert is located at https://192.168.XXX.YYY/cert.pem for easy download.
+
+### RPI provided image option
+
+I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse, or however.
+
+[Dwonload it here](https://drive.google.com/file/d/10WtVXUh7yHxWmdSaR95-E_M3pnUNUtvr/view?usp=sharing) ( 2.4-GB zipped )
+
+The image uses the following user/pass combo:
+```
+username: vdo 
+password: ninja
+```
+
+It requires an 8-GB uSD card or larger; if it's too big, you'll need to PiShrink it down first using: https://ostechnix.com/pishrink-make-raspberry-pi-images-smaller/
+(I may get around to doing that in the future)
+
+Just burn the image following any RPi guide, login in, and get going.  Currently I think v22.10 (beta) is installed, so probably out of date. You can update, but if you do, you may need to run `sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.hostname+":8443";session\.customWSS = true;/' ./vdo.ninja/index.html` from the home user folder after, or manually update the index.html to point to the local wss server. Depending on how you update, it may not be needed though.
+
+You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.  Accept any SSL concerns or what not (see https://github.com/steveseguin/vdo.ninja/blob/develop/install.md#dealing-with-no-ssl-scenarios for more details)
+
+You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs. The required cert is located at https://192.168.XXX.YYY/cert.pem for easy download.
+
