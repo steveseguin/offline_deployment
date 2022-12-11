@@ -44,3 +44,6 @@ sudo systemctl restart vdoninja
 
 ## or start our server directly ..
 # sudo nodejs server.js
+
+## show IP addresses
+ifconfig 
