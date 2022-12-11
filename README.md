@@ -1,3 +1,17 @@
+This guide was tested on a Raspberry Pi with a clean RPI OS installed.
+
+It's recommend you install the image with the Raspberry Pi Imager app, and enable SSH and WiFi via that app, if intending to connect those ways.
+
+I can provide an image, but WiFi will need to be configured via boot config , Ethernet, or with keyboard/mouse, or whatever.
+
+Most my images use the following user/pass combo:
+```
+username: vdo 
+password: ninja
+```
+
+If installing via scratch, the following is a sample script that might get you going. I'd recommend you run each block manually, a bit at a time, to catch any errors or user input requirements along the way.
+
 ```
 ### If using a Raspberry Pi, and if having issues updating
 sudo chmod 777 /etc/resolv.conf
