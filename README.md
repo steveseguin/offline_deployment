@@ -8,6 +8,8 @@ It's recommend you install the image with the Raspberry Pi Imager app, and enabl
 
 I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse, or however.
 
+[https://drive.google.com/file/d/10WtVXUh7yHxWmdSaR95-E_M3pnUNUtvr/view?usp=sharing](https://drive.google.com/file/d/10WtVXUh7yHxWmdSaR95-E_M3pnUNUtvr/view?usp=sharing) ( 2.4-GB zipped )
+
 The image uses the following user/pass combo:
 ```
 username: vdo 
