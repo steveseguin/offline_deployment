@@ -1,0 +1,16 @@
+[Unit]
+Description=Raspberry Ninja as an offline system service
+After=network-online.target
+Requires=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=idle
+ExecStartPre=/bin/sleep 5
+Restart=always
+RestartSec=5s
+ExecStart=/usr/bin/nodejs /home/vdo/webserver/server.js
+
+[Install]
+WantedBy=multi-user.target
