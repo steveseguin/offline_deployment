@@ -4,7 +4,7 @@ It's recommend you install the image with the Raspberry Pi Imager app, and enabl
 
 I can provide an image, but WiFi will need to be configured via boot config , Ethernet, or with keyboard/mouse, or whatever.
 
-Most my images use the following user/pass combo:
+If I post an image, it will likely use the following user/pass combo:
 ```
 username: vdo 
 password: ninja
