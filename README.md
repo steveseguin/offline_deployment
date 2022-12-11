@@ -1,3 +1,4 @@
+```
 ### If using a Raspberry Pi, and if having issues updating
 sudo chmod 777 /etc/resolv.conf
 sudo echo "nameserver 1.1.1.1" >> /etc/resolv.conf
@@ -51,3 +52,4 @@ sudo systemctl restart vdoninja
 ## You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.
 ## You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs
 
+```
