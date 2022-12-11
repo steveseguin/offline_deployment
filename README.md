@@ -4,6 +4,8 @@ This guide was tested on a Raspberry Pi with a clean RPI OS installed.
 
 It's recommend you install the image with the Raspberry Pi Imager app, and enable SSH and WiFi via that app, if intending to connect those ways.  
 
+Included with this guide is a custom Node.js server script (express.js), along with a linux service file to auto-start things on boot, if needed. You can probably use the Node.js on its own, but it's only intended for offline use -- I haven't tested for public use.
+
 ### RPI provided image option
 
 I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse, or however.
