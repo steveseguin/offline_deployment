@@ -2,15 +2,28 @@
 
 This guide was tested on a Raspberry Pi with a clean RPI OS installed.
 
-It's recommend you install the image with the Raspberry Pi Imager app, and enable SSH and WiFi via that app, if intending to connect those ways.
+It's recommend you install the image with the Raspberry Pi Imager app, and enable SSH and WiFi via that app, if intending to connect those ways.  
 
-I can provide an image, but WiFi will need to be configured via boot config , Ethernet, or with keyboard/mouse, or whatever.
+### RPI provided image option
 
-If I post an image, it will likely use the following user/pass combo:
+I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse, or however.
+
+The image uses the following user/pass combo:
 ```
 username: vdo 
 password: ninja
 ```
+
+It requires an 8-GB uSD card or larger; if it's too big, you'll need to PiShrink it down first using: https://ostechnix.com/pishrink-make-raspberry-pi-images-smaller/
+(I may get around to doing that in the future)
+
+Just burn the image following any RPi guide, login in, and get going.  Currently I think v22.10 (beta) is installed, so probably out of date. You can update, but if you do, be sure to run `sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.hostname+":8443";session\.customWSS = true;/' ./vdo.ninja/index.html` from the home user folder after, or manually update the index.html to point to the local wss server.
+
+You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.  Accept any SSL concerns or what not (see https://github.com/steveseguin/vdo.ninja/blob/develop/install.md#dealing-with-no-ssl-scenarios for more details)
+
+You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs. The required cert is located at https://192.168.XXX.YYY/cert.pem for easy download.
+
+### Installing from scratch 
 
 If installing via scratch, the following is a sample script that might get you going. I'd recommend you run each block manually, a bit at a time, to catch any errors or user input requirements along the way.
 
@@ -70,6 +83,6 @@ ifconfig
 
 ```
 
-You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.
+You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.  Accept any SSL concerns or what not (see https://github.com/steveseguin/vdo.ninja/blob/develop/install.md#dealing-with-no-ssl-scenarios for more details)
 
-You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs
+You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs. The required cert is located at https://192.168.XXX.YYY/cert.pem for easy download.
