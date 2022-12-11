@@ -32,6 +32,7 @@ sudo npm install fs
 
 ## Lets create our self-signed certs
 openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem
+## Just press enter to skip past the questions at the end of the process
 
 ## Make it available to the website, so you can download it and install it
 cp cert.pem ../vdo.ninja/cert.pem
