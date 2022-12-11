@@ -62,6 +62,9 @@ sudo systemctl restart vdoninja
 ## or start our server directly ..
 # sudo nodejs server.js
 
+## show IP addresses
+ifconfig 
+
 ```
 
 You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.
