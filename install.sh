@@ -15,6 +15,7 @@ sudo apt-get install git -y
 sudo apt-get install nodejs -y
 sudo apt-get install npm -y
 sudo apt-get install vim -y
+sudo apt-get install net-tools -y
 
 ### Install vdo.ninja 
 git clone https://github.com/steveseguin/vdo.ninja
