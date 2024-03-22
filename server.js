@@ -12,14 +12,11 @@
 // sudo apt-get upgrade
 // sudo apt-get install nodejs -y
 // sudo apt-get install npm -y
-// sudo npm install express
-// sudo npm install ws
-// sudo npm install fs
-// sudo npm install cors
+// npm install
 // sudo add-apt-repository ppa:certbot/certbot  
 // sudo apt-get install certbot -y
 // sudo certbot certonly // register your domain
-// sudo nodejs vdoninja.js // port 443 needs to be open. THIS STARTS THE SERVER (or create a service instead)
+// nodejs server.js // port 443 needs to be open. THIS STARTS THE SERVER (or create a service instead)
 //
 //// Finally, within VDO.Ninja, update index.html of the ninja installation as needed, such as with:
 //  session.wss = "wss://wss.contribute.cam:443";
@@ -105,4 +102,5 @@ websocketServer.on('connection', (webSocketClient) => {
 
   webSocketClient.on('close', function(reasonCode, description) {});
 });
-server.listen(443, () => { console.log(`Server started on port 443`) });
+
+server.listen(process.env.PORT ?? 443, () => { console.log(`Server started on port 443`) });
