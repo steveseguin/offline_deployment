@@ -27,9 +27,7 @@ sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.loca
 git clone https://github.com/steveseguin/offline_deployment
 mv offline_deployment webserver
 cd webserver
-sudo npm install express
-sudo npm install ws
-sudo npm install fs
+npm install
 
 ## Lets create our self-signed certs
 openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem
