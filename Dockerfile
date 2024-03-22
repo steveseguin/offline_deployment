@@ -11,7 +11,7 @@ RUN npm install
 
 ADD --keep-git-dir=true https://github.com/steveseguin/vdo.ninja.git /var/vdo/vdo.ninja
 WORKDIR /var/vdo/vdo.ninja
-RUN sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.hostname+":8443";session\.customWSS = true;session.configuration = {}/' ./index.html
+RUN sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.host;session\.customWSS = true;session.configuration = {}/' ./index.html
 
 EXPOSE 443
 
