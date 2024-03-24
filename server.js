@@ -107,5 +107,5 @@ websocketServer.on('connection', (webSocketClient) => {
 
 app.use('/', express.static(path.join(__dirname, './../vdo.ninja/')))
 
-const port = 8443
+const port = process.env.PORT ?? 443
 server.listen(port, () => { console.log(`Server started on port ${port}`) });
