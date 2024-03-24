@@ -105,6 +105,19 @@ You may need to download and install the cert https://192.168.XXX.YYY/cert.pem i
 
 There's now a docker option to deploy a basic offline-version of VDO.Ninja also, supplied by @hamza1311. Thank you.
 
+#### How to use
+
+1. Mount your certificates
+2. Set environment variables `CERT_PATH` and `KEY_PATH` for the certificate and private key respectively
+3. Bind port 8443
+    3.1. **Note:** the port _can_ be different but you may run into issues where port is hardcoded to be 8443
+
+#### Example
+
+```
+docker run --mount type=bind,source="$(pwd)"/certs,target=/var/certs -e KEY_PATH=/var/certs/private.key -e CERT_PATH=/var/certs/certificate.crt -p 8443:8443 vdoninja
+```
+
 ### Getting OBS to play nice without Internet
 
 If on Windows, OBS uses the same certificates as Chrome does, so adding self-signed certs to Chrome works for users there. There may be a URL parameter to disable SSL checking as well, but I can't seem to find it at the moment.
