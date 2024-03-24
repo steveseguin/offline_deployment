@@ -30,6 +30,7 @@ var express = require("express");
 var app = express();
 var WebSocket = require("ws");
 var cors = require('cors');
+var path = require("path");
 
 
 const key = fs.readFileSync(process.env.KEY_PATH ?? "./key.pem"); /// UPDATE THIS PATH
@@ -104,4 +105,7 @@ websocketServer.on('connection', (webSocketClient) => {
   webSocketClient.on('close', function(reasonCode, description) {});
 });
 
-server.listen(process.env.PORT ?? 443, () => { console.log(`Server started on port 443`) });
+app.use('/', express.static(path.join(__dirname, './../vdo.ninja/')))
+
+const port = process.env.PORT ?? 443
+server.listen(port, () => { console.log(`Server started on port ${port}`) });
