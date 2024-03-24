@@ -6,6 +6,11 @@ Included with this guide is a custom Node.js server script (express.js), along w
 
 There is no STUN or TURN server provided in this guide/install, as those are probably not needed if using just over a LAN.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
+
 ### Installing from scratch 
 
 If installing via scratch, the following is a sample script that might get you going. I'd recommend you run each block manually, a bit at a time, to catch any errors or user input requirements along the way. This install script may run fine on a Ubuntu system, but it's only tested on a Raspberry Pi.
@@ -96,6 +101,8 @@ There's now a docker option to deploy a basic offline-version of VDO.Ninja also,
 ### Getting OBS to play nice without Internet
 
 If on Windows, OBS uses the same certificates as Chrome does, so adding self-signed certs to Chrome works for users there. There may be a URL parameter to disable SSL checking as well, but I can't seem to find it at the moment.
+
+On Mac, I loosely recall I needed to add the self-signed certs to the local system's keychain for it to work. 
 
 @hamza1311 mentioned when deploying on Linux, to get OBS to play nice, they used real SSL certificates for their domain, and then had things point to their local IP in `/etc/hosts`.
 
