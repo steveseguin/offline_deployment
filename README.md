@@ -49,7 +49,7 @@ sudo apt-get install vim -y
 git clone https://github.com/steveseguin/vdo.ninja
 
 ## configure vdo.ninja for local hss server
-sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.hostname+":8443";session\.customWSS = true;/' ./vdo.ninja/index.html
+sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.host;session\.customWSS = true;session\.salt = "vdo\.ninja";session.configuration = {}/' ./vdo.ninja/index.html
 
 ### Install websocket server
 git clone https://github.com/steveseguin/offline_deployment
@@ -84,7 +84,7 @@ You may need to download and install the cert https://192.168.XXX.YYY/cert.pem i
 
 ### RPI provided image option
 
-I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse, or however.
+I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse, or however. (It's a bit out of date at this point, but should still work I think)
 
 [Download it here](https://drive.google.com/file/d/10WtVXUh7yHxWmdSaR95-E_M3pnUNUtvr/view?usp=sharing) ( 2.4-GB zipped )
 
