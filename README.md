@@ -13,6 +13,8 @@ There is no STUN or TURN server provided in this guide/install, as those are pro
 - [Installing from scratch](#installing-from-scratch)
 - [RPI provided image option](#rpi-provided-image-option)
 - [Docker option](#docker-option)
+  - [How to use](#how-to-use)
+  - [Example](#example)
 - [Getting OBS to play nice without Internet](#getting-obs-to-play-nice-without-internet)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
