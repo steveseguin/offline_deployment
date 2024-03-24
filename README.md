@@ -2,9 +2,9 @@
 
 This guide was tested on a Raspberry Pi with a clean RPI OS installed ([the image of which is provided if desired](https://github.com/steveseguin/offline_deployment#rpi-provided-image-option))
 
-Included with this guide is a custom Node.js server script (express.js), along with a linux service file to auto-start things on boot, if needed. You can probably use the Node.js on its own, but it's only intended for offline use -- I haven't tested for public use.
+Included with this guide is a custom Node.js server script (express.js), along with a linux service file to auto-start things on boot, if needed. The Node.js script combines a webserver and websocket server in one.
 
-There is no STUN or TURN server provided in this guide/install, as those are probably not needed if using just over a LAN.
+This deployment and script is intended for offline use -- I haven't tested for public use. To use it online however, you'd need to specify a STUN and TURN in the `session.configuration` setttings, as STUN/TURN are not needed for offline use. Using a valid SSL certificate and a domain name would also probably be advised for online-use.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -24,7 +24,7 @@ There is no STUN or TURN server provided in this guide/install, as those are pro
 
 If installing via scratch, the following is a sample script that might get you going. I'd recommend you run each block manually, a bit at a time, to catch any errors or user input requirements along the way. This install script may run fine on a Ubuntu system, but it's only tested on a Raspberry Pi.
 
-We will be using ports 443 and 8443, just in case you have those already in use, you may need to configure it yourself then.
+We will be using port 443 in the below steps, but you change to something else using, eg: `export PORT=8443`
 
 ```
 ### If using a Raspberry Pi, and if having issues updating
@@ -64,6 +64,9 @@ openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem
 ## Make it available to the website, so you can download it and install it
 cp cert.pem ../vdo.ninja/cert.pem
 
+## Customize the port, optionally
+# export PORT=443 ## by default, it will use port 443, but 8443 is a good alternative
+
 ## create a service and start the server
 sudo cp vdoninja.service /etc/systemd/system/
 sudo systemctl daemon-reload
@@ -84,7 +87,7 @@ You may need to download and install the cert https://192.168.XXX.YYY/cert.pem i
 
 ### RPI provided image option
 
-I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse, or however. (It's a bit out of date at this point, but should still work I think)
+I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse. The image is a bit out of date at this point, but should still work I think. 
 
 [Download it here](https://drive.google.com/file/d/10WtVXUh7yHxWmdSaR95-E_M3pnUNUtvr/view?usp=sharing) ( 2.4-GB zipped )
 
@@ -97,7 +100,7 @@ password: ninja
 It requires an 8-GB uSD card or larger; if it's too big, you'll need to PiShrink it down first using: https://ostechnix.com/pishrink-make-raspberry-pi-images-smaller/
 (I may get around to doing that in the future)
 
-Just burn the image following any RPi guide, login in, and get going.  Currently I think v22.10 (beta) is installed, so probably out of date. You can update, but if you do, you may need to run `sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.hostname+":8443";session\.customWSS = true;/' ./vdo.ninja/index.html` from the home user folder after, or manually update the index.html to point to the local wss server. Depending on how you update, it may not be needed though.
+Just burn the image following any RPi guide, login in, and get going.  Currently I think v22.10 (beta) is installed, so probably out of date. You can update, but if you do, you may need to run `sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.host;session\.customWSS = true;session\.salt = "vdo\.ninja";session.configuration = {}/' ./vdo.ninja/index.html` from the home user folder after, or manually update the index.html to point to the local wss server. Depending on how you update, it may not be needed though.
 
 You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.  Accept any SSL concerns or what not (see https://github.com/steveseguin/vdo.ninja/blob/develop/install.md#dealing-with-no-ssl-scenarios for more details)
 
@@ -124,7 +127,7 @@ docker run --mount type=bind,source="$(pwd)"/certs,target=/var/certs -e KEY_PATH
 
 If on Windows, OBS uses the same certificates as Chrome does, so adding self-signed certs to Chrome works for users there. There may be a URL parameter to disable SSL checking as well, but I can't seem to find it at the moment.
 
-On Mac, I loosely recall I needed to add the self-signed certs to the local system's keychain for it to work. 
+On Mac, I loosely recall that I needed to add the self-signed certs to the local system's keychain for it to work. 
 
 @hamza1311 mentioned when deploying on Linux, to get OBS to play nice, they used real SSL certificates for their domain, and then had things point to their local IP in `/etc/hosts`.
 
