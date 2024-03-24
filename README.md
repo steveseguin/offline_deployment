@@ -89,3 +89,14 @@ You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded. 
 
 You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs. The required cert is located at https://192.168.XXX.YYY/cert.pem for easy download.
 
+### Docker option
+
+There's now a docker option to deploy a basic offline-version of VDO.Ninja also, supplied by @hamza1311. Thank you.
+
+### Getting OBS to play nice without Internet
+
+If on Windows, OBS uses the same certificates as Chrome does, so adding self-signed certs to Chrome works for users there. There may be a URL parameter to disable SSL checking as well, but I can't seem to find it at the moment.
+
+@hamza1311 mentioned when deploying on Linux, to get OBS to play nice, they used real SSL certificates for their domain, and then had things point to their local IP in `/etc/hosts`.
+
+Please let me know if you find additional ways to handle SSL certifcates offline, or other ways of ensureing webRTC plays nice.
