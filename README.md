@@ -132,3 +132,19 @@ On Mac, I loosely recall that I needed to add the self-signed certs to the local
 @hamza1311 mentioned when deploying on Linux, to get OBS to play nice, they used real SSL certificates for their domain, and then had things point to their local IP in `/etc/hosts`.
 
 Please let me know if you find additional ways to handle SSL certifcates offline, or other ways of ensureing webRTC plays nice.
+
+### If you're having trouble ..
+
+9 out of 10 times the issue you are having is with the SSL certificates. You need to install the certifcates used onto all the devices that interface with VDO.Ninja for it to work. This is not a simple task, so if you don't know what you are doing, I'd advise instead just getting a cellular hotspot or such, and not self-deploy VDO.Ninja.
+
+While there are some solutions that negate the need for self-signed certs, they can be even more complicated and convoluted.
+
+If you don't know what a self-signed certificate is, it is not the same as having Let's Encrypt created one.
+
+Let's Encrypt is a Certificate Authority (CA) that issues domain-validated SSL/TLS certificates. These certificates are recognized and trusted by most web browsers because Let's Encrypt is a member of the CA/Browser Forum and is included in the trusted root certificate stores of major web browsers and operating systems. Since we are deploying offline, we won't be using a CA issued certificate, but a self-signed one instead.
+
+Self-signed certificates are not issued by a CA, but are created and signed by the entity or individual using the certificate. eg: `openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem`. Because they are not issued by a trusted CA, browsers and operating systems do not inherently trust self-signed certificates, often resulting in security warnings unless the certificate is manually added to the trust store of the device or application.
+
+Because we want our self-signed cert to be trusted however, we will need to manually add the self-signed certificate to our trusted keychains; those used by our browsers and operating systems.  We will also be using the self-signed certificate for our locally hosted webserver and handshake (wss) server.
+
+Please refer to your local chat bot for more information on create, using, and deploying self-signed certificates if this is all new to you.
