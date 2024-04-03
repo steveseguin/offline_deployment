@@ -136,11 +136,11 @@ Please let me know if you find additional ways to handle SSL certifcates offline
 
 ### If you're having trouble ..
 
-9 out of 10 times the issue you are having is with the SSL certificates. You need to install the certifcates used onto all the devices that interface with VDO.Ninja for it to work. This is not a simple task, so if you don't know what you are doing, I'd advise instead just getting a cellular hotspot or such, and not self-deploy VDO.Ninja.
+9 out of 10 times the issue you are having is with the SSL certificates. You need to install the certifcates used onto all the devices that interface with VDO.Ninja for it to work. This is not a simple task, so if you don't know what you are doing, I'd advise instead just getting a cellular hotspot or such, and not to self-deploy VDO.Ninja.
 
 While there are some solutions that negate the need for self-signed certs, they can be even more complicated and convoluted.
 
-If you don't know what a self-signed certificate is, it is not the same as having Let's Encrypt created one.
+If you don't know what a self-signed certificate is, it is not the same as having Let's Encrypt create one.
 
 Let's Encrypt is a Certificate Authority (CA) that issues domain-validated SSL/TLS certificates. These certificates are recognized and trusted by most web browsers because Let's Encrypt is a member of the CA/Browser Forum and is included in the trusted root certificate stores of major web browsers and operating systems. Since we are deploying offline, we won't be using a CA issued certificate, but a self-signed one instead.
 
