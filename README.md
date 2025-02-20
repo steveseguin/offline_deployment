@@ -57,6 +57,7 @@ git clone https://github.com/steveseguin/offline_deployment
 mv offline_deployment webserver
 cd webserver
 npm install
+npm install express
 
 ## Lets create our self-signed certs
 openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem
