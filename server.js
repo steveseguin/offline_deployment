@@ -13,6 +13,7 @@
 // sudo apt-get install nodejs -y
 // sudo apt-get install npm -y
 // npm install
+// npm install express
 // sudo add-apt-repository ppa:certbot/certbot  
 // sudo apt-get install certbot -y
 // sudo certbot certonly // register your domain
@@ -32,9 +33,8 @@ var WebSocket = require("ws");
 var cors = require('cors');
 var path = require("path");
 
-
-const key = fs.readFileSync(process.env.KEY_PATH ?? "./key.pem"); /// UPDATE THIS PATH
-const cert = fs.readFileSync(process.env.CERT_PATH ?? "./cert.pem"); /// UPDATE THIS PATH
+const key = fs.readFileSync(process.env.KEY_PATH || "./key.pem"); /// UPDATE THIS PATH
+const cert = fs.readFileSync(process.env.CERT_PATH || "./cert.pem"); /// UPDATE THIS PATH
 
 var server = https.createServer({ key, cert }, app);
 var websocketServer = new WebSocket.Server({ server });
@@ -44,33 +44,62 @@ app.use(cors({
 }));
 
 websocketServer.on('connection', (webSocketClient) => {
-  var room = false;
+  let room = false;
+  
+  const cleanupClient = () => {
+    if (room) {
+      broadcastToRoom(room, {
+        type: 'disconnect',
+        uuid: webSocketClient.uuid
+      }, webSocketClient);
+    }
+  };
+
+  const broadcastToRoom = (roomId, message, exclude) => {
+    websocketServer.clients.forEach(client => {
+      if (client !== exclude && client.room === roomId) {
+        client.send(JSON.stringify(message));
+      }
+    });
+  };
+
   webSocketClient.on('message', (message) => {
+    let msg;
     try {
-      var msg = JSON.parse(message);
+      msg = JSON.parse(message);
     } catch (e) {
+      webSocketClient.send(JSON.stringify({ error: 'invalid message format' }));
       return;
     }
 
-    if (!msg.from) return;
+    if (!msg.from) {
+      webSocketClient.send(JSON.stringify({ error: 'missing from field' }));
+      return;
+    }
 
     if (!webSocketClient.uuid) {
-      let alreadyExists = Array.from(websocketServer.clients).some(client => client.uuid && client.uuid === msg.from && client != webSocketClient);
-
-      if (alreadyExists) {
-        webSocketClient.send(JSON.stringify({ error: "uuid already in use" }));
+      if (Array.from(websocketServer.clients).some(client => 
+        client.uuid && client.uuid === msg.from && client !== webSocketClient
+      )) {
+        webSocketClient.send(JSON.stringify({ error: 'uuid already in use' }));
         return;
-      } 
+      }
       webSocketClient.uuid = msg.from;
     }
 
-    var streamID = false;
-
+    let streamID = false;
     try {
-      if (msg.request == "seed" && msg.streamID) {
+      if (msg.request === 'seed' && msg.streamID) {
         streamID = msg.streamID;
-      } else if (msg.request == "joinroom") {
-        room = msg.roomid + "";
+      } else if (msg.request === 'joinroom') {
+        const newRoom = msg.roomid + '';
+        if (room && room !== newRoom) {
+          broadcastToRoom(room, {
+            type: 'leave',
+            uuid: webSocketClient.uuid
+          }, webSocketClient);
+        }
+        room = newRoom;
         webSocketClient.room = room;
         if (msg.streamID) {
           streamID = msg.streamID;
@@ -81,31 +110,45 @@ websocketServer.on('connection', (webSocketClient) => {
     }
 
     if (streamID) {
-      if (webSocketClient.sid && streamID != webSocketClient.sid) {
+      if (webSocketClient.sid && streamID !== webSocketClient.sid) {
         webSocketClient.send(JSON.stringify({ error: "can't change sid" }));
         return;
       }
-
-      let alreadyExists = Array.from(websocketServer.clients).some(client => client.sid && client.sid === streamID && client != webSocketClient);
-
-      if (alreadyExists) {
-        webSocketClient.send(JSON.stringify({ error: "sid already in use" }));
+      if (Array.from(websocketServer.clients).some(client => 
+        client.sid && client.sid === streamID && client !== webSocketClient
+      )) {
+        webSocketClient.send(JSON.stringify({ error: 'sid already in use' }));
         return;
       }
       webSocketClient.sid = streamID;
     }
 
     websocketServer.clients.forEach(client => {
-      if (webSocketClient == client || (msg.UUID && msg.UUID != client.uuid) || (room && (!client.room || client.room !== room)) || (!room && client.room) || (msg.request == "play" && msg.streamID && (!client.sid || client.sid !== msg.streamID))) return;
-      
+      if (webSocketClient === client || 
+          (msg.UUID && msg.UUID !== client.uuid) || 
+          (room && (!client.room || client.room !== room)) || 
+          (!room && client.room) || 
+          (msg.request === 'play' && msg.streamID && (!client.sid || client.sid !== msg.streamID))) {
+        return;
+      }
       client.send(message.toString());
     });
   });
 
-  webSocketClient.on('close', function(reasonCode, description) {});
+  webSocketClient.on('close', cleanupClient);
+  webSocketClient.on('error', () => cleanupClient());
 });
+
+
+setInterval(() => {
+  websocketServer.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.ping();
+    }
+  });
+}, 30000);
 
 app.use('/', express.static(path.join(__dirname, './../vdo.ninja/')))
 
-const port = process.env.PORT ?? 443
+const port = process.env.PORT || 443;
 server.listen(port, () => { console.log(`Server started on port ${port}`) });
