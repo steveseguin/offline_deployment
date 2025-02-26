@@ -152,6 +152,14 @@ Because we want our self-signed cert to be trusted however, we will need to manu
 
 Please refer to your local chat bot for more information on create, using, and deploying self-signed certificates if this is all new to you.
 
+### Offline WHIP as well
+
+If using WHIP offline with VDO.Ninja, you can find the WHIP/WHEP handshake service below:
+
+https://github.com/steveseguin/whip
+
+You technically don't need the VDO.Ninja handshake service is just using WHIP/WHEP with VDO.Ninja, but having both of course is suggested.  The are seperate services, so they will need different sub-domain names, certs, etc.  Feel free to combine them at your own peril, but it would be possible to do without much effort. 
+
 ### SSL is normally the problem...
 
 Just a note; if installing multiple end points and using self-signed certs with local DNS, be sure the SSL certs are made to support these domains
