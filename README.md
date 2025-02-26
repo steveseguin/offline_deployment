@@ -150,3 +150,33 @@ Self-signed certificates are not issued by a CA, but are created and signed by t
 Because we want our self-signed cert to be trusted however, we will need to manually add the self-signed certificate to our trusted keychains; those used by our browsers and operating systems.  We will also be using the self-signed certificate for our locally hosted webserver and handshake (wss) server.
 
 Please refer to your local chat bot for more information on create, using, and deploying self-signed certificates if this is all new to you.
+
+### SSL is normally the problem...
+
+Just a note; if installing multiple end points and using self-signed certs with local DNS, be sure the SSL certs are made to support these domains
+
+For example, this is the solution one user found when trying to manage multiple sub domains with multiple offline VDO.Ninja-related services:
+
+```
+ I needed to generate a new set of certificates that included the new url's we are using.
+First I hade to  create the ninja.lan.ext file for openssl with the following setings:
+
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = ninja.lan
+DNS.2 = ws.ninja.lan
+DNS.3 = wss.ninja.lan
+DNS.4 = whip.ninja.lan
+DNS.5 = whep.ninja.lan 
+Then you run :
+
+openssl x509 -req -in ninja.lan.csr -CA myCA.pem -CAkey myCA.key -CAcreateserial -out ninja.lan.crt -days 1825 -sha256 -extfile ninja.lan.ext
+
+Then make the changes to the servers buy adding the new key and cert:
+        key: fs.readFileSync(process.env.KEY_PATH  "./../certs/whip-ninja-lan/ninja.lan.key"), 
+        cert: fs.readFileSync(process.env.CERT_PATH  "./../certs/whip-ninja-lan/ninja.lan.crt")
+```
