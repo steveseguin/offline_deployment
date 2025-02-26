@@ -17,6 +17,7 @@ This deployment and script is intended for offline use -- I haven't tested for p
   - [Example](#example)
 - [Getting OBS to play nice without Internet](#getting-obs-to-play-nice-without-internet)
 - [If you're having trouble ..](#if-youre-having-trouble-)
+- [Offline WHIP as well](#offline-whip-as-well)
 - [SSL is normally the problem...](#ssl-is-normally-the-problem)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
