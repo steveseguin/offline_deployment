@@ -25,7 +25,7 @@ This deployment and script is intended for offline use -- I haven't tested for p
 
 ### Installing from scratch 
 
-If installing via scratch, the following is a sample script that might get you going. I'd recommend you run each block manually, a bit at a time, to catch any errors or user input requirements along the way. This install script may run fine on a Ubuntu system, but it's only tested on a Raspberry Pi.
+If installing via scratch, the following is a sample script that might get you going. I'd recommend you run each block manually, a bit at a time, to catch any errors or user input requirements along the way. This install script may run fine on a Ubuntu system, but it's only tested on a Raspberry Pi. You may need to have AI rewrite the script for different systems, like if deploying on macOS.
 
 We will be using port 443 in the below steps, but you change to something else using, eg: `export PORT=8443`
 
