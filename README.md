@@ -52,7 +52,7 @@ sudo apt-get install vim -y
 git clone https://github.com/steveseguin/vdo.ninja
 
 ## configure vdo.ninja for local hss server
-sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.host;session\.customWSS = true;session\.salt = "vdo\.ninja";session.configuration = {}/' ./vdo.ninja/index.html
+sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.host;session\.customWSS = true;session\.salt = "vdo\.ninja";session.configuration = {};/' ./vdo.ninja/index.html
 
 ### Install websocket server
 git clone https://github.com/steveseguin/offline_deployment
