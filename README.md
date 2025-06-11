@@ -137,6 +137,8 @@ On Mac, I loosely recall that I needed to add the self-signed certs to the local
 
 Please let me know if you find additional ways to handle SSL certifcates offline, or other ways of ensureing webRTC plays nice.
 
+Also with OBS Studio, try starting it with ` --ignore-certificate-errors ` added to the command line to bypass SSL certificate errors.
+
 ### If you're having trouble ..
 
 9 out of 10 times the issue you are having is with the SSL certificates. You need to install the certifcates used onto all the devices that interface with VDO.Ninja for it to work. This is not a simple task, so if you don't know what you are doing, I'd advise instead just getting a cellular hotspot or such, and not to self-deploy VDO.Ninja.
