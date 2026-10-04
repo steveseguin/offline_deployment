@@ -2,6 +2,8 @@ node_modules
 *.pem
 *.key
 *.crt
+*.key.previous
+*.crt.previous
 certs/
 site/
 site-backup-*/

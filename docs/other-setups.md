@@ -4,7 +4,7 @@
 
 ## Already using Caddy
 
-You do not need to replace a working Caddy installation. If browsers already publish and view through it, first address the native app's certificate trust.
+You do not need to replace a working Caddy installation. If browsers already publish and view through it, first address the native VDO.Ninja app's certificate trust.
 
 With `tls internal`, Caddy creates its own CA and manages server certificates. Keep its data directory persistent. Export **the public root certificate**, usually `pki/authorities/local/root.crt` relative to Caddy's data directory. The data directory depends on your installation; in a standard container it is commonly under `/data/caddy`. Never share `root.key` or export the whole CA directory to clients.
 
@@ -25,7 +25,7 @@ This guide sets `session.configuration = {}` in its deployment copy to avoid pub
 
 ## Offline WHIP/WHEP
 
-For a separate WHIP/WHEP service, see [steveseguin/whip](https://github.com/steveseguin/whip). This repository supplies the VDO.Ninja website and routed WebSocket signaling; it does not install that service. Give each HTTPS endpoint a certificate covering its actual hostname/IP, including every name when sharing a certificate. WHIP/WHEP deployment is outside this guide's tested path.
+For a separate WHIP/WHEP service, see [steveseguin/whip](https://github.com/steveseguin/whip). This repository supplies the VDO.Ninja website and routed WebSocket signaling; it does not install that service. Give each HTTPS endpoint a certificate covering its actual hostname/IP, including every name when sharing a certificate.
 
 ## Existing vanilla installations
 

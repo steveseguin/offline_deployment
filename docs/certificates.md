@@ -4,12 +4,48 @@
 
 **Install the public root certificate on each connecting device.** For this guide that is `certs/rootCA.crt`. For an existing Caddy installation it is the root exported from Caddy. Installing the wrong root will not help.
 
+## Create server certificates
+
+Run this on the Linux server, inside `offline_deployment`. Replace **192.168.1.28** with your server's IP in both places below.
+
+For a **new installation**:
+
+```sh
+(
+set -e
+umask 077
+mkdir -m 700 certs
+openssl req -x509 -newkey rsa:3072 -sha256 -nodes -days 3650 \
+  -keyout certs/rootCA.key -out certs/rootCA.crt \
+  -subj '/CN=VDO.Ninja Local CA' \
+  -addext 'basicConstraints=critical,CA:TRUE,pathlen:0' \
+  -addext 'keyUsage=critical,keyCertSign,cRLSign'
+openssl req -new -newkey rsa:2048 -nodes -sha256 \
+  -keyout certs/server.key -out certs/server.csr \
+  -subj '/CN=VDO.Ninja Local Server'
+cat > certs/server.ext <<'EOF'
+basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature,keyEncipherment
+extendedKeyUsage=serverAuth
+subjectAltName=IP:192.168.1.28
+EOF
+openssl x509 -req -in certs/server.csr -CA certs/rootCA.crt \
+  -CAkey certs/rootCA.key -CAcreateserial -days 397 -sha256 \
+  -extfile certs/server.ext -out certs/server.crt
+openssl verify -CAfile certs/rootCA.crt -verify_ip 192.168.1.28 certs/server.crt
+)
+```
+
+Look for **`certs/server.crt: OK`**. The block stops if `certs/` already exists; use [renewal instructions](maintenance.md#renew-the-server-certificate) for an existing installation.
+
+If you use a hostname too, include it in the `subjectAltName` line, for example `IP:192.168.1.28,DNS:studio.home.arpa`. Devices must be able to resolve that hostname.
+
 ## Before installing
 
-Keep the server's certificate directory private. The helper creates it with Linux mode 700 and private keys with mode 600. Existing directories, Windows and WSL mounts may need their own access-control settings; use a native Linux filesystem for the vanilla installation. Do not make keys world-readable to fix a permission error.
+Keep the server's certificate directory private. The commands above create it with Linux mode 700 and private files with mode 600. Existing directories, Windows and WSL mounts may need their own access-control settings; use a native Linux filesystem for the vanilla installation. Do not make keys world-readable to fix a permission error.
 
 - Transfer the root through a channel you trust, such as USB. Never transfer `rootCA.key` or `server.key` to clients.
-- Compare the root's SHA-256 fingerprint with the value shown on your server. On the server you can display it again with:
+- Compare the root's SHA-256 fingerprint on the server and the receiving device. On the server you can display it again with:
 
 ```sh
 openssl x509 -in certs/rootCA.crt -noout -subject -fingerprint -sha256
@@ -40,11 +76,9 @@ To remove it, open **Manage user certificates** (`certmgr.msc`), find this speci
 
 Menu wording varies by Android version and manufacturer. Google's [certificate management guide](https://support.google.com/pixelphone/answer/2844832) covers the general settings and removal controls; its Wi-Fi-specific installation example is a different certificate use.
 
-**Android beta app 5.0.102:** Chrome success does not establish that the app trusts the root. The reviewed app's Android build uses Dart 3.8.1, whose default trust loading reads system certificates rather than the user's installed CA. See [the Dart implementation](https://github.com/dart-lang/sdk/blob/3.8.1/runtime/bin/security_context_linux.cc#L43-L53). Test the actual app after installing the root. If it still fails, the [minimal Flutter follow-up](flutter-handoff.md) allows an opt-in certificate-error exception for that handshake server only. This would retain encryption but skip server identity verification. The separate Flutter task has since implemented and tested this exception in a local 5.0.104 candidate; it is not a confirmed public release or a setting implemented by this repository. The exception is off by default, applies only to the selected custom WSS host and port, clears on endpoint changes, and also skips hostname/expiry checks. There is no in-app CA importer.
+**Native VDO.Ninja app:** if the browser connects but the app reports a certificate error, see [app connection settings](devices.md#native-vdoninja-app).
 
 For removal, use the device's **Trusted credentials / User** or **User credentials** screen, inspect the specific CA, and remove it. Avoid **Clear credentials**, which can remove unrelated certificates too.
-
-**Device test, 2026-10-04:** on a Pixel 4a running Android 13, app 5.0.103 still reported `CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate` after the root was installed as a CA certificate and the app was fully restarted. Steve confirmed that Brave opened the same local HTTPS site without a certificate error. The certificate-installation guide works for that browser, but this app build needs a connection fix. The local 5.0.104 candidate connected using its scoped exception; installed-CA trust in Dart still failed. See the [test record](validation.md).
 
 ## iPhone and iPad
 
@@ -54,7 +88,7 @@ For removal, use the device's **Trusted credentials / User** or **User credentia
 4. Enable full trust for your root certificate. Installing the profile alone does not automatically enable SSL trust for a manually installed root.
 5. Restart the browser/app and test the local HTTPS address.
 
-These steps follow [Apple's certificate-trust instructions](https://support.apple.com/en-us/102390). Safari success and app success should be checked separately. This particular native-app deployment has not been verified on an iPhone here.
+See [Apple's certificate-trust instructions](https://support.apple.com/en-us/102390).
 
 To remove it, remove the matching certificate profile under **VPN & Device Management**. Do not remove unrelated profiles.
 

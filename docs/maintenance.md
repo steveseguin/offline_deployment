@@ -41,35 +41,36 @@ The template uses a regular user and port 8443. It does not need to run as root.
 
 ## Renew the server certificate
 
-Renew before the printed expiry date, or whenever you add/change the server's IP/hostname. Keep the **same root CA** so clients do not need to trust a new root.
+Renew before expiry or when the server address changes. Keep the same root CA so devices continue to trust it.
 
-Stop the server first (Ctrl+C, `sudo systemctl stop vdoninja`, or `docker compose stop`). Then, from this folder:
-
-```sh
-node scripts/create-certificates.js --renew 192.168.1.28
-```
-
-List **all** addresses that must remain valid, including any hostname:
+1. Back up `certs/` privately and stop the server.
+2. Check that `certs/server.ext` lists the current addresses. For an older installation without this file, create it using the [certificate instructions](certificates.md#create-server-certificates).
+3. From `offline_deployment`, run:
 
 ```sh
-node scripts/create-certificates.js --renew 192.168.1.28 studio.home.arpa
+(
+set -e
+umask 077
+openssl req -new -key certs/server.key -out certs/server.csr \
+  -subj '/CN=VDO.Ninja Local Server'
+openssl x509 -req -in certs/server.csr -CA certs/rootCA.crt \
+  -CAkey certs/rootCA.key -CAcreateserial -days 397 -sha256 \
+  -extfile certs/server.ext -out certs/server.next.crt
+openssl verify -CAfile certs/rootCA.crt certs/server.next.crt
+cp certs/server.crt certs/server.crt.previous
+mv certs/server.next.crt certs/server.crt
+)
 ```
 
-The helper reuses `rootCA.crt`/`rootCA.key`, replaces the server pair, and saves the previous pair as `server.crt.previous` and `server.key.previous`. Back up the folder securely first. Restart the server and rerun the connection check. Node reads certificates at startup, not automatically on file change. For Docker bind mounts, use `docker compose up -d --force-recreate` after renewal.
+Restart the server and open the local website. For Docker, use `docker compose up -d --force-recreate`.
 
-If the root private key was archived offline, restore it with its matching root certificate before renewal. If a CA file is missing, the helper stops rather than silently creating another CA. If you lose the CA key, the CA expires, or the key is compromised, create a new CA in a **new private directory**, switch the server paths, install the new root on every client, and remove trust in the old root. This is a deliberate migration, not ordinary renewal.
+If the root expires or its key is lost or compromised, create a new CA in a new private directory and install its root on every device.
 
 ## Update the website
 
-**Migrating from the previous fanout server:** update the server and the deployment copy together. Stop the server and run:
+For an older fanout deployment, use `session.customWSS = false` in the site's self-hosting configuration and change browser URL overrides from `wss=` to `wss2=`. Keep the existing address, salt and certificates.
 
-```sh
-node scripts/configure-site.js site
-```
-
-This upgrades the exact configuration block written by the earlier helper to `customWSS = false`. Restart the server and reload all publishing/viewing pages. Existing certificates, salt and ports stay the same. If your older deployment was configured manually or by the old `sed` command, set `session.customWSS = false` in that deployment's self-hosting configuration while retaining its local `session.wss`, salt and ICE settings; the helper intentionally refuses unrecognized customizations. Browser links using `&wss=` must use `&wss2=` instead. For Docker, rebuild the image and recreate the container so server and website are upgraded together.
-
-The version in `vdoninja-version.txt` is a specific upstream commit. Both vanilla and Docker use it. The helper only changes the deployment copy's existing self-hosting configuration; it does not change VDO.Ninja's upstream code or another checkout.
+The installer and Docker build use the website revision in `vdoninja-version.txt`.
 
 To rebuild the selected version or recover an interrupted install, stop the server and preserve the old site:
 

@@ -178,6 +178,10 @@ wss.on('connection', ws => {
             case 'seed': {
                 const streamID = readId(data.streamID);
                 if (!streamID) return;
+                if (streamIDs.has(uuid) && streamIDs.get(uuid) !== streamID) {
+                    safeSend(requester, JSON.stringify({ request: 'alert', message: 'Stream ID cannot change on an existing connection.' }));
+                    return;
+                }
                 if (streams.has(streamID)) {
                     const existing = streams.get(streamID);
                     if (existing !== uuid) {

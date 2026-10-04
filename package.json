@@ -4,7 +4,6 @@
   "description": "Local HTTPS website and secure signaling server for an offline VDO.Ninja deployment",
   "main": "server.js",
   "scripts": {
-    "test": "node --test --test-concurrency=1 test/setup.test.js",
     "start": "node server.js"
   },
   "keywords": [],

@@ -3,6 +3,5 @@
 !package-lock.json
 !server.js
 !vdoninja-version.txt
-!scripts/
-!scripts/configure-site.js
+!install.sh
 !Dockerfile
