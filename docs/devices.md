@@ -1,4 +1,4 @@
-# Connect your phone or OBS
+# Publish and watch
 
 [Back to setup](../README.md)
 
@@ -8,28 +8,15 @@ Use your server's IP in place of **192.168.1.28**. These examples use port **844
 
 [Install `rootCA.crt`](certificates.md) on each phone/computer. Open `https://192.168.1.28:8443/` in its browser without a certificate warning.
 
-## Native VDO.Ninja app
+## Publish from a browser
 
-Open **Publishing Settings**, then enable **Advanced Settings** to see the connection fields.
+On the camera device, open:
 
-![Settings reference: Handshake server wss://192.168.1.28:8443, Custom Salt vdo.ninja, Stream ID lancheck, WHIP output off. View at https://192.168.1.28:8443/?view=lancheck.](images/app-settings.png)
+```text
+https://192.168.1.28:8443/?push=lancheck
+```
 
-*Example settings*
-
-| Field | Enter |
-|---|---|
-| Stream ID | `lancheck` |
-| Room name / Password | Leave blank for this first test |
-| Handshake server | `wss://192.168.1.28:8443` |
-| Custom Salt | `vdo.ninja` |
-| TURN server | Leave at the default for this first LAN test |
-| Enable WHIP output | Off |
-
-Enter the handshake address first, leave that field, then enter the salt. Recheck both and press **CONNECT**. Allow camera/microphone access.
-
-**Certificate error in the native VDO.Ninja app?** Check the address, certificate and device clock. If your app offers **Ignore certificate errors for this handshake server**, use it only for your own trusted server: it keeps encryption but skips identity checks.
-
-On iOS, [enable full trust for the installed root](certificates.md#iphone-and-ipad).
+Allow camera/microphone access and start publishing. Use a different stream ID in place of `lancheck` for each camera.
 
 ## Watch in a browser
 
@@ -39,9 +26,9 @@ On another device, open:
 https://192.168.1.28:8443/?view=lancheck
 ```
 
-Use the local address above, even if the app's share link opens `vdo.ninja`. Confirm picture and sound.
+Confirm picture and sound. Use the same stream ID and password at both ends.
 
-For an existing stream, replace `lancheck` with its ID and keep any password parameters. Browser handshake overrides use **`wss2=`** with this server; the app's handshake field takes only **`wss://IP:PORT`**.
+The prepared website connects to your handshake server automatically. For another website, see [browser URL settings](../README.md#using-other-vdoninja-pages).
 
 ## Watch in OBS
 
@@ -54,4 +41,31 @@ For an existing stream, replace `lancheck` with its ID and keep any password par
 
 Check camera/mic permissions, matching stream settings, and guest Wi-Fi isolation. Try pausing a VPN if it blocks LAN connections.
 
-The native VDO.Ninja app uses public TURN servers by default, even with a blank TURN field. Its network settings are separate from the website. [Troubleshooting](troubleshooting.md) · [Optional internet assistance](hybrid.md)
+[Troubleshooting](troubleshooting.md) · [Optional internet assistance](hybrid.md)
+
+## Optional apps and integrations
+
+For an app or integration with custom signaling support, use these connection details in its settings:
+
+| Setting | Value |
+|---|---|
+| Handshake server | `wss://192.168.1.28:8443` |
+| Salt | `vdo.ninja` |
+| Stream ID / password | Match the viewer |
+| Certificate | Trust the server's root CA |
+
+Setting names vary by app. Use its documentation to select the routed signaling protocol, corresponding to the browser's `wss2=` option. Configure STUN/TURN in that app separately from the website.
+
+### Native VDO.Ninja app
+
+Open **Publishing Settings**, then enable **Advanced Settings**.
+
+![Example native app settings: handshake wss://192.168.1.28:8443, salt vdo.ninja, stream ID lancheck, WHIP off.](images/app-settings.png)
+
+Enter the handshake address first, then the salt. Set **Stream ID** to `lancheck`, leave **Room name** and **Password** blank, and keep **WHIP output** off. Press **CONNECT** and allow camera/microphone access.
+
+Watch using the [local viewer URL](#watch-in-a-browser). The app's handshake field takes `wss://IP:PORT`, without `wss2=`.
+
+For certificate errors, check the address, certificate and device clock. If available, **Ignore certificate errors for this handshake server** keeps encryption but skips identity checks; use it only for your own trusted server. On iOS, [enable full trust for the root](certificates.md#iphone-and-ipad).
+
+A blank TURN field uses public TURN servers by default. Use the [offline connection check](../README.md#6-trust-the-root-and-test-two-browsers) before disconnecting the internet for your session.

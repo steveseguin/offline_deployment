@@ -4,7 +4,7 @@ Host VDO.Ninja on a Linux computer or Raspberry Pi for phones and computers on t
 
 ![The local server supplies the website and handshake service. Audio and video travel between devices.](docs/images/local-network.png)
 
-**Already installed?** [Connect your phone or OBS](docs/devices.md) · [Troubleshooting](docs/troubleshooting.md)
+**Already installed?** [Publish and watch](#6-trust-the-root-and-test-two-browsers) · [Use OBS](docs/devices.md#watch-in-obs) · [Troubleshooting](docs/troubleshooting.md)
 
 ## 1. Choose a stable server address
 
@@ -15,7 +15,7 @@ This guide uses **192.168.1.28**. Replace it with your server's address everywhe
 | Use | Address |
 |---|---|
 | Website | `https://192.168.1.28:8443/` |
-| App handshake | `wss://192.168.1.28:8443` |
+| Handshake server | `wss://192.168.1.28:8443` |
 
 Use the same LAN/Wi-Fi, not a guest network. Keep **:8443** in the addresses.
 
@@ -41,7 +41,7 @@ cd offline_deployment
 bash install.sh
 ```
 
-Wait for **Website ready**. The installer prepares a local copy in `site/` with local signaling and public STUN/TURN disabled.
+Wait for **Website ready**. The installer updates `site/index.html` to use this server for signaling, sets the salt to `vdo.ninja`, and disables public STUN/TURN. The local website is ready to use without editing files or adding handshake options to your links.
 
 ## 4. Create your local certificates
 
@@ -75,9 +75,15 @@ Leave this terminal open. Allow TCP **8443 from your LAN** through the server's 
 
 Use matching passwords if you set one. To check offline use, disconnect the internet uplink when it will not disrupt others, keep Wi-Fi/LAN running, disable phone cellular data, and reload both pages.
 
-## 7. Connect the native app
+## Using other VDO.Ninja pages
 
-For the native VDO.Ninja app, follow [Connect your phone or OBS](docs/devices.md) for the exact fields and viewer link. Some Android app builds need the custom-server certificate exception even after the root is installed.
+The prepared local website already connects to your server. To point another VDO.Ninja website at it, append this to both the publisher and viewer links:
+
+```text
+&wss2=192.168.1.28:8443&salt=vdo.ninja
+```
+
+Use `?` instead of the first `&` if the URL has no query yet. This server uses **`wss2=`**. Keep using your local website address for offline use; loading `vdo.ninja` requires internet.
 
 ## Optional hybrid use with internet access
 
@@ -90,4 +96,5 @@ The website defaults to local connections. For internet-assisted STUN/TURN or VP
 | Start at boot, renew certificates, or update | [Maintenance](docs/maintenance.md) |
 | Docker | [Optional Docker setup](docs/docker.md) |
 | Existing proxy or VPS | [Other setups](docs/other-setups.md) |
+| Optional apps and integrations | [Connection settings](docs/devices.md#optional-apps-and-integrations) |
 | Something does not connect | [Troubleshooting](docs/troubleshooting.md) |
