@@ -1,3 +1,22 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [VDO.Ninja on your local network](#vdoninja-on-your-local-network)
+  - [Find your next step](#find-your-next-step)
+  - [What you are setting up](#what-you-are-setting-up)
+  - [1. Choose a stable server address](#1-choose-a-stable-server-address)
+  - [2. Install the tools](#2-install-the-tools)
+  - [3. Download and prepare the website](#3-download-and-prepare-the-website)
+  - [4. Create your local certificates](#4-create-your-local-certificates)
+  - [5. Start the secure server](#5-start-the-secure-server)
+  - [6. Trust the root and test two browsers](#6-trust-the-root-and-test-two-browsers)
+  - [7. Connect the native app](#7-connect-the-native-app)
+  - [Optional hybrid use with internet access](#optional-hybrid-use-with-internet-access)
+  - [What to do next](#what-to-do-next)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # VDO.Ninja on your local network
 
 Run your own VDO.Ninja website and secure handshake server on a Linux computer or Raspberry Pi. Once prepared, the basic browser-to-browser setup can run without an internet connection.
