@@ -85,6 +85,77 @@ test('create valid IP, IPv6 and DNS certificates; preserve them until explicit r
   assert.equal(digest('server.crt.previous'), leafBefore);
 });
 
+test('failed renewal preserves the active pair and backups, including on retry', () => {
+  const preload = path.join(work, 'fail-certificate-install.cjs');
+  fs.writeFileSync(preload, `
+    const fs = require('fs');
+    const path = require('path');
+    for (const operation of ['copyFileSync', 'renameSync']) {
+      const original = fs[operation];
+      fs[operation] = function (source, target, ...args) {
+        if (path.dirname(target) === process.env.CERT_TEST_OUT &&
+            path.basename(target) === process.env.CERT_TEST_FAIL_TARGET &&
+            !String(source).endsWith('.restore')) {
+          throw Object.assign(new Error('simulated certificate installation failure'), { code: 'EIO' });
+        }
+        return original.call(this, source, target, ...args);
+      };
+    }
+  `);
+  for (const backupsExist of [false, true]) {
+    for (const failTarget of ['server.key.previous', 'server.crt.previous', 'server.key', 'server.crt']) {
+      const directory = fs.mkdtempSync(path.join(work, 'failed-renewal-'));
+      const names = ['rootCA.key', 'rootCA.crt', 'server.key', 'server.crt'];
+      if (backupsExist) names.push('server.key.previous', 'server.crt.previous');
+      for (const name of names) fs.copyFileSync(path.join(certs, name), path.join(directory, name));
+      const before = new Map(names.map(name => [name, fs.readFileSync(path.join(directory, name))]));
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const result = spawnSync(process.execPath, ['--require', preload,
+          path.join(repo, 'scripts/create-certificates.js'), '--out', directory, '--renew', 'localhost'], {
+          cwd: repo, encoding: 'utf8', timeout: 30000, windowsHide: true,
+          env: { ...process.env, UV_THREADPOOL_SIZE: '2', CERT_TEST_OUT: directory, CERT_TEST_FAIL_TARGET: failTarget }
+        });
+        assert.equal(result.status, 1, result.stderr || result.stdout);
+        assert.match(result.stderr, /simulated certificate installation failure/);
+        assert.deepEqual(fs.readdirSync(directory).sort(), [...before.keys()].sort());
+        for (const [name, contents] of before) {
+          assert.deepEqual(fs.readFileSync(path.join(directory, name)), contents, failTarget + ': ' + name);
+        }
+      }
+    }
+  }
+});
+
+test('failed rollback retains its recovery files and prints their location', () => {
+  const directory = fs.mkdtempSync(path.join(work, 'failed-rollback-'));
+  const preload = path.join(work, 'fail-certificate-rollback.cjs');
+  const names = ['rootCA.key', 'rootCA.crt', 'server.key', 'server.crt'];
+  for (const name of names) fs.copyFileSync(path.join(certs, name), path.join(directory, name));
+  const originalKey = fs.readFileSync(path.join(directory, 'server.key'));
+  fs.writeFileSync(preload, `
+    const fs = require('fs');
+    const path = require('path');
+    const rename = fs.renameSync;
+    fs.renameSync = function (source, target) {
+      if (path.basename(source) === 'server.crt' || path.basename(source) === 'server.key.restore') {
+        throw Object.assign(new Error('simulated disk error'), { code: 'EIO' });
+      }
+      return rename.call(this, source, target);
+    };
+  `);
+  const result = spawnSync(process.execPath, ['--require', preload,
+    path.join(repo, 'scripts/create-certificates.js'), '--out', directory, '--renew', 'localhost'], {
+    cwd: repo, encoding: 'utf8', timeout: 30000, windowsHide: true,
+    env: { ...process.env, UV_THREADPOOL_SIZE: '2' }
+  });
+  assert.equal(result.status, 1, result.stderr || result.stdout);
+  const stages = fs.readdirSync(directory).filter(name => name.startsWith('.creating-'));
+  assert.equal(stages.length, 1);
+  const stage = path.join(directory, stages[0]);
+  assert.ok(result.stderr.includes('Recovery files preserved in ' + stage));
+  assert.deepEqual(fs.readFileSync(path.join(stage, 'server.key.restore')), originalKey);
+});
+
 test('private key permissions on filesystems supporting POSIX modes', t => {
   if (process.platform === 'win32') return t.skip('Windows uses ACLs, not POSIX modes.');
   const probe = path.join(work, 'permissions-probe');

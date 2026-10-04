@@ -13,6 +13,46 @@ function openssl(args) {
   return result.stdout.trim();
 }
 
+// The server is stopped during renewal. Replace whole files and roll back the
+// complete set on failure, including existing recovery backups.
+function replaceServerFiles(stage, out, serverExists) {
+  const names = ['server.key', 'server.crt'];
+  if (serverExists) {
+    for (const name of names) fs.copyFileSync(path.join(out, name), path.join(stage, name + '.previous'));
+    names.unshift('server.key.previous', 'server.crt.previous');
+  }
+  const originals = new Map();
+  for (const name of names) {
+    const target = path.join(out, name);
+    const original = fs.existsSync(target) ? path.join(stage, name + '.restore') : null;
+    if (original) fs.copyFileSync(target, original);
+    originals.set(name, original);
+  }
+  const installed = [];
+  try {
+    for (const name of names) {
+      fs.renameSync(path.join(stage, name), path.join(out, name));
+      installed.push(name);
+    }
+  } catch (error) {
+    const failures = [];
+    for (const name of installed.reverse()) {
+      try {
+        const original = originals.get(name);
+        if (original) fs.renameSync(original, path.join(out, name));
+        else fs.unlinkSync(path.join(out, name));
+      } catch (rollbackError) {
+        failures.push(name + ': ' + rollbackError.message);
+      }
+    }
+    if (failures.length) {
+      error.recoveryDirectory = stage;
+      error.message += '. Recovery files preserved in ' + stage + '. Restore the matching pair before restarting: ' + failures.join('; ');
+    }
+    throw error;
+  }
+}
+
 function main() {
   const args = process.argv.slice(2);
   if (args.includes('--help')) {
@@ -64,6 +104,7 @@ function main() {
   const staged = name => path.join(stage, name);
   let rootCert = file('rootCA.crt');
   let rootKey = file('rootCA.key');
+  let preserveStage = false;
   try {
     if (!caExists) {
       rootCert = staged('rootCA.crt');
@@ -96,25 +137,25 @@ function main() {
       '-set_serial', '0x' + crypto.randomBytes(16).toString('hex'), '-days', '397', '-sha256',
       '-extfile', staged('server.ext'), '-out', staged('server.crt')]);
     openssl(['verify', '-CAfile', rootCert, '-purpose', 'sslserver', staged('server.crt')]);
+    fs.chmodSync(rootKey, 0o600);
+    fs.chmodSync(rootCert, 0o644);
     if (!caExists) {
       fs.copyFileSync(rootKey, file('rootCA.key'), fs.constants.COPYFILE_EXCL);
       fs.copyFileSync(rootCert, file('rootCA.crt'), fs.constants.COPYFILE_EXCL);
     }
-    // Renew with the server stopped; preserve the previous pair for recovery.
-    if (serverExists) {
-      fs.copyFileSync(file('server.key'), file('server.key.previous'));
-      fs.copyFileSync(file('server.crt'), file('server.crt.previous'));
-    }
-    fs.copyFileSync(staged('server.key'), file('server.key'));
-    fs.copyFileSync(staged('server.crt'), file('server.crt'));
-    for (const name of ['rootCA.key', 'server.key']) fs.chmodSync(file(name), 0o600);
-    for (const name of ['rootCA.crt', 'server.crt']) fs.chmodSync(file(name), 0o644);
+    // Set modes before publishing, so a chmod failure cannot damage the active pair.
+    fs.chmodSync(staged('server.key'), 0o600);
+    fs.chmodSync(staged('server.crt'), 0o644);
+    replaceServerFiles(stage, out, serverExists);
     console.log('Server certificate ready for: ' + hosts.join(', '));
     console.log('Install only ' + file('rootCA.crt') + ' on your devices. Never share .key files.');
     console.log('Root SHA-256 fingerprint: ' + ca.fingerprint256);
     console.log('Server certificate expires: ' + new crypto.X509Certificate(fs.readFileSync(file('server.crt'))).validTo);
+  } catch (error) {
+    preserveStage = error.recoveryDirectory === stage;
+    throw error;
   } finally {
-    if (path.dirname(path.resolve(stage)) === path.resolve(out) && path.basename(stage).startsWith('.creating-')) {
+    if (!preserveStage && path.dirname(path.resolve(stage)) === path.resolve(out) && path.basename(stage).startsWith('.creating-')) {
       fs.rmSync(stage, { recursive: true, force: true });
     }
   }
