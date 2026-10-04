@@ -1,49 +1,27 @@
-### If using a Raspberry Pi, and if having issues updating
-sudo chmod 777 /etc/resolv.conf
-sudo echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-sudo chmod 644 /etc/resolv.conf
-sudo chattr -V +i /etc/resolv.conf ### lock access
-sudo systemctl restart systemd-resolved.service
-export GIT_SSL_NO_VERIFY=1
+#!/usr/bin/env bash
+# Prepare only this repository's ignored site/ directory. No sudo or OS changes.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
-### Update
-sudo apt-get update
-sudo apt-get upgrade -y
+for tool in node npm git openssl; do
+  command -v "$tool" >/dev/null || { echo "Missing $tool. See README.md step 2." >&2; exit 1; }
+done
+node -e 'if (Number(process.versions.node.split(".")[0]) < 22) { console.error("Use Node.js 22 or newer (supported LTS recommended)."); process.exit(1); }'
+if [[ -e site ]]; then
+  echo 'site/ already exists; leaving it untouched. See docs/maintenance.md to update or recover.' >&2
+  exit 1
+fi
+revision=$(tr -d '\r\n' < vdoninja-version.txt)
+[[ "$revision" =~ ^[0-9a-f]{40}$ ]] || { echo 'Invalid vdoninja-version.txt' >&2; exit 1; }
 
-### Install dependencies
-sudo apt-get install git -y
-sudo apt-get install nodejs -y
-sudo apt-get install npm -y
-sudo apt-get install vim -y
-sudo apt-get install net-tools -y
-
-### Install vdo.ninja 
-git clone https://github.com/steveseguin/vdo.ninja
-
-## configure vdo.ninja for local hss server
-sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.hostname+":8443";session\.customWSS = true;/' ./vdo.ninja/index.html
-
-### Install websocket server
-git clone https://github.com/steveseguin/offline_deployment
-mv offline_deployment webserver
-cd webserver
-npm install
-
-## Lets create our self-signed certs
-openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem
-## Just press enter to skip past the questions at the end of the process
-
-## Make it available to the website, so you can download it and install it
-cp cert.pem ../vdo.ninja/cert.pem
-
-## create a service and start the server
-sudo cp vdoninja.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable vdoninja
-sudo systemctl restart vdoninja
-
-## or start our server directly ..
-# sudo nodejs server.js
-
-## show IP addresses
-ifconfig 
+export npm_config_jobs=2
+export UV_THREADPOOL_SIZE=2
+export MAKEFLAGS=-j2
+npm ci --omit=dev
+git init --quiet site
+git -C site remote add origin https://github.com/steveseguin/vdo.ninja.git
+git -C site -c pack.threads=2 fetch --depth=1 origin "$revision"
+git -C site checkout --detach FETCH_HEAD
+node scripts/configure-site.js site
+echo 'Website ready. Next: node scripts/create-certificates.js YOUR_SERVER_IP'
+echo 'Then follow README.md to start HTTPS and trust your root certificate.'

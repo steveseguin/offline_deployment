@@ -1,0 +1,4 @@
+*.sh text eol=lf
+*.js text eol=lf
+*.service text eol=lf
+Dockerfile text eol=lf

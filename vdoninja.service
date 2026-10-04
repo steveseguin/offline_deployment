@@ -1,16 +1,25 @@
 [Unit]
-Description=Raspberry Ninja as an offline system service
+Description=VDO.Ninja local HTTPS website and handshake server
+Wants=network-online.target
 After=network-online.target
-Requires=network-online.target
 
 [Service]
-User=root
-Group=root
-Type=idle
-ExecStartPre=/bin/sleep 5
-Restart=always
+Type=simple
+# Replace YOUR_USER and /ABSOLUTE/PATH/offline_deployment before installing.
+User=YOUR_USER
+WorkingDirectory=/ABSOLUTE/PATH/offline_deployment
+Environment=PORT=8443
+Environment=WEB_ROOT=/ABSOLUTE/PATH/offline_deployment/site
+Environment=CERT_PATH=/ABSOLUTE/PATH/offline_deployment/certs/server.crt
+Environment=KEY_PATH=/ABSOLUTE/PATH/offline_deployment/certs/server.key
+Environment=UV_THREADPOOL_SIZE=2
+# Use the absolute result of: command -v node
+ExecStart=/usr/bin/node /ABSOLUTE/PATH/offline_deployment/server.js
+Restart=on-failure
 RestartSec=5s
-ExecStart=/usr/bin/nodejs /home/vdo/webserver/server.js
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
 
 [Install]
 WantedBy=multi-user.target

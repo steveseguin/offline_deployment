@@ -1,2 +1,9 @@
 node_modules
 *.pem
+*.key
+*.crt
+certs/
+site/
+site-backup-*/
+.test-output/
+.env

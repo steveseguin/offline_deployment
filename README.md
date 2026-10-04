@@ -1,194 +1,228 @@
-## Guide + code to run VDO.Ninja without Internet on a local network
+# VDO.Ninja on your local network
 
-This guide was tested on a Raspberry Pi with a clean RPI OS installed ([the image of which is provided if desired](https://github.com/steveseguin/offline_deployment#rpi-provided-image-option))
+Run your own VDO.Ninja website and secure handshake server on a Linux computer or Raspberry Pi. Once prepared, the basic browser-to-browser setup can run without an internet connection.
 
-Included with this guide is a custom Node.js server script (express.js), along with a linux service file to auto-start things on boot, if needed. The Node.js script combines a webserver and websocket server in one.
+**Start with the ordinary installation below.** You do not need Docker, Caddy, a domain name, or a separate handshake-server package. [Docker is an optional installation path](docs/docker.md).
 
-This deployment and script is intended for offline use -- I haven't tested for public use. To use it online however, you'd need to specify a STUN and TURN in the `session.configuration` setttings, as STUN/TURN are not needed for offline use. Using a valid SSL certificate and a domain name would also probably be advised for online-use.
+This guide targets a private LAN: devices on the same home, studio or event network. A public VPS needs additional networking and access-control planning; see [other deployment setups](docs/other-setups.md). The current server is a small LAN signaling example, not a hardened public hosting service.
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**
+## Find your next step
 
-- [Installing from scratch](#installing-from-scratch)
-- [RPI provided image option](#rpi-provided-image-option)
-- [Docker option](#docker-option)
-  - [How to use](#how-to-use)
-  - [Example](#example)
-- [Getting OBS to play nice without Internet](#getting-obs-to-play-nice-without-internet)
-- [If you're having trouble ..](#if-youre-having-trouble-)
-- [Offline WHIP as well](#offline-whip-as-well)
-- [SSL is normally the problem...](#ssl-is-normally-the-problem)
+| You want to… | Start here |
+|---|---|
+| Understand the parts | [What you are setting up](#what-you-are-setting-up) |
+| Install on Linux or a Raspberry Pi | [Step 1](#1-choose-a-stable-server-address) |
+| Trust your certificate on a phone or computer | [Device instructions](docs/certificates.md) |
+| Connect the native Android/iOS app | [App settings and current limitations](#7-connect-the-native-app) |
+| Use internet-assisted connections (hybrid) | [Optional STUN/TURN](#optional-hybrid-use-with-internet-access) |
+| Fix a connection | [Troubleshooting](docs/troubleshooting.md) |
+| Start at boot or renew a certificate | [Maintenance](docs/maintenance.md) |
+| Use Docker or an existing Caddy setup | [Docker](docs/docker.md) · [Other setups](docs/other-setups.md) |
+| Check what has actually been tested | [Validation](docs/validation.md) |
 
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+## What you are setting up
 
+![A local server provides the website and HTTPS/WSS handshake connections to a publisher phone and viewer computer. Audio and video travel directly between the devices on the LAN.](docs/images/local-network.png)
 
-### Installing from scratch 
+| Part | What it does |
+|---|---|
+| **Website** | The VDO.Ninja page you open in a browser. |
+| **Handshake server** | Helps publishers and viewers find each other and exchange connection details. Also called the signaling server. |
+| **HTTPS / WSS** | Encrypted connections to the website and handshake server. WSS means secure WebSocket. |
+| **Certificate** | Lets a device verify the identity of the server it is connecting to. |
+| **Local CA** | Your own certificate authority: it signs your server certificate. Devices must trust its public root certificate. |
+| **Salt** | A shared setting used by VDO.Ninja clients when deriving identifiers/encryption information. This guide uses `vdo.ninja`. It is not a server address or a password. |
 
-If installing via scratch, the following is a sample script that might get you going. I'd recommend you run each block manually, a bit at a time, to catch any errors or user input requirements along the way. This install script may run fine on a Ubuntu system, but it's only tested on a Raspberry Pi. You may need to have AI rewrite the script for different systems, like if deploying on macOS.
+The included `server.js` serves both the website and signaling on one HTTPS port. It uses the advanced routing protocol: the server assigns peer identities and delivers messages to their intended peers. On a typical LAN, the audio/video goes directly between devices. The server is not a media relay. The illustration shows the usual direct connection, not every possible network topology.
 
-We will be using port 443 in the below steps, but you change to something else using, eg: `export PORT=8443`
+**Before you begin:** use a current Raspberry Pi OS, Debian or Ubuntu installation, a regular Linux user with `sudo` access, and a phone/computer for testing. Use the same LAN, avoid guest Wi-Fi/client isolation, and check that the clocks are correct. Camera/microphone access requires a trusted secure browser connection.
 
-```
-### If using a Raspberry Pi, and if having issues updating
-sudo chmod 777 /etc/resolv.conf
-sudo echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-sudo chmod 644 /etc/resolv.conf
-sudo chattr -V +i /etc/resolv.conf ### lock access
-sudo systemctl restart systemd-resolved.service
-export GIT_SSL_NO_VERIFY=1
+The commands below run in a **terminal on the Linux server**, unless a step says otherwise. Replace `192.168.1.28` with your own server IP everywhere. Use a folder path without spaces for the service examples.
 
-### Update
-sudo apt-get update
-sudo apt-get upgrade -y
+## 1. Choose a stable server address
 
-### Install dependencies
-sudo apt-get install git -y
-sudo apt-get install nodejs -y
-sudo apt-get install npm -y
-sudo apt-get install vim -y
+Find the server's LAN address:
 
-### Install vdo.ninja 
-git clone https://github.com/steveseguin/vdo.ninja
-
-## configure vdo.ninja for local hss server
-sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.host;session\.customWSS = true;session\.salt = "vdo\.ninja";session.configuration = {};/' ./vdo.ninja/index.html
-
-### Install websocket server
-git clone https://github.com/steveseguin/offline_deployment
-mv offline_deployment webserver
-cd webserver
-npm install
-npm install express
-
-## Lets create our self-signed certs
-openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem
-## Just press enter to skip past the questions at the end of the process
-
-## Make it available to the website, so you can download it and install it
-cp cert.pem ../vdo.ninja/cert.pem
-
-## Customize the port, optionally
-# export PORT=443 ## by default, it will use port 443, but 8443 is a good alternative
-
-## create a service and start the server
-sudo cp vdoninja.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable vdoninja
-sudo systemctl restart vdoninja
-
-## or start our server directly ..
-# sudo nodejs server.js
-
-## show IP addresses
-ifconfig 
-
+```sh
+hostname -I
 ```
 
-You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.  Accept any SSL concerns or what not (see https://github.com/steveseguin/vdo.ninja/blob/develop/install.md#dealing-with-no-ssl-scenarios for more details)
+Choose its LAN address, not a Docker/VPN address. In your router, reserve that address for the server (often called a **DHCP reservation**). This avoids having to change links and certificates when the server restarts.
 
-You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs. The required cert is located at https://192.168.XXX.YYY/cert.pem for easy download.
+We will use these example values:
 
-### RPI provided image option
+| Setting | Example |
+|---|---|
+| Server address | `192.168.1.28` |
+| Website | `https://192.168.1.28:8443/` |
+| Handshake server | `wss://192.168.1.28:8443` |
+| Salt | `vdo.ninja` |
 
-I'm providing a RPi image, but WiFi will need to be configured via boot config, Ethernet, or with keyboard/mouse. The image is a bit out of date at this point, but should still work I think. 
+Port **8443** lets a regular user run the server without administrator privileges. Keep `:8443` in the links. Port 443 is possible with a separately configured service/proxy, but is not needed for this guide.
 
-[Download it here](https://drive.google.com/file/d/10WtVXUh7yHxWmdSaR95-E_M3pnUNUtvr/view?usp=sharing) ( 2.4-GB zipped )
+**Checkpoint:** another device is on the same LAN, and you know which IP belongs to the server.
 
-The image uses the following user/pass combo:
-```
-username: vdo 
-password: ninja
-```
+## 2. Install the tools
 
-It requires an 8-GB uSD card or larger; if it's too big, you'll need to PiShrink it down first using: https://ostechnix.com/pishrink-make-raspberry-pi-images-smaller/
-(I may get around to doing that in the future)
+Internet access is needed here and while downloading the website and Node dependencies.
 
-Just burn the image following any RPi guide, login in, and get going.  Currently I think v22.10 (beta) is installed, so probably out of date. You can update, but if you do, you may need to run `sed -i 's/\/\/ session\.customWSS = true;/session\.wss = "wss:\/\/"+window\.location\.host;session\.customWSS = true;session\.salt = "vdo\.ninja";session.configuration = {}/' ./vdo.ninja/index.html` from the home user folder after, or manually update the index.html to point to the local wss server. Depending on how you update, it may not be needed though.
-
-You can then load the site at https://192.168.XXX.YYY/ or whereever its loaded.  Accept any SSL concerns or what not (see https://github.com/steveseguin/vdo.ninja/blob/develop/install.md#dealing-with-no-ssl-scenarios for more details)
-
-You may need to download and install the cert https://192.168.XXX.YYY/cert.pem if you don't have allowances for self-signed certs. The required cert is located at https://192.168.XXX.YYY/cert.pem for easy download.
-
-### Docker option
-
-There's now a docker option to deploy a basic offline-version of VDO.Ninja also, supplied by @hamza1311. Thank you.
-
-#### How to use
-
-1. Mount your certificates
-2. Set environment variables `CERT_PATH` and `KEY_PATH` for the certificate and private key respectively
-3. Bind port 8443
-    3.1. **Note:** the port _can_ be different but you may run into issues where port is hardcoded to be 8443
-
-#### Example
-
-```
-docker run --mount type=bind,source="$(pwd)"/certs,target=/var/certs -e KEY_PATH=/var/certs/private.key -e CERT_PATH=/var/certs/certificate.crt -p 8443:8443 vdoninja
+```sh
+sudo apt update
+sudo apt install -y git openssl nodejs npm
+node --version
+npm --version
+openssl version
 ```
 
-### Getting OBS to play nice without Internet
+Use **Node.js 22 or newer**, preferably a supported LTS release. Some older Linux distributions supply an older Node version: if so, stop here and follow the [official Node.js installation options](https://nodejs.org/en/download), then check `node --version` again. The setup script checks this before proceeding. No compiler or VDO.Ninja frontend build is required.
 
-If on Windows, OBS uses the same certificates as Chrome does, so adding self-signed certs to Chrome works for users there. There may be a URL parameter to disable SSL checking as well, but I can't seem to find it at the moment.
+## 3. Download and prepare the website
 
-On Mac, I loosely recall that I needed to add the self-signed certs to the local system's keychain for it to work. 
-
-@hamza1311 mentioned when deploying on Linux, to get OBS to play nice, they used real SSL certificates for their domain, and then had things point to their local IP in `/etc/hosts`.
-
-Please let me know if you find additional ways to handle SSL certifcates offline, or other ways of ensureing webRTC plays nice.
-
-Also with OBS Studio, try starting it with ` --ignore-certificate-errors ` added to the command line to bypass SSL certificate errors.
-
-### If you're having trouble ..
-
-9 out of 10 times the issue you are having is with the SSL certificates. You need to install the certifcates used onto all the devices that interface with VDO.Ninja for it to work. This is not a simple task, so if you don't know what you are doing, I'd advise instead just getting a cellular hotspot or such, and not to self-deploy VDO.Ninja.
-
-While there are some solutions that negate the need for self-signed certs, they can be even more complicated and convoluted.
-
-If you don't know what a self-signed certificate is, it is not the same as having Let's Encrypt create one.
-
-Let's Encrypt is a Certificate Authority (CA) that issues domain-validated SSL/TLS certificates. These certificates are recognized and trusted by most web browsers because Let's Encrypt is a member of the CA/Browser Forum and is included in the trusted root certificate stores of major web browsers and operating systems. Since we are deploying offline, we won't be using a CA issued certificate, but a self-signed one instead.
-
-Self-signed certificates are not issued by a CA, but are created and signed by the entity or individual using the certificate. eg: `openssl req  -nodes -new -x509  -keyout key.pem -out cert.pem`. Because they are not issued by a trusted CA, browsers and operating systems do not inherently trust self-signed certificates, often resulting in security warnings unless the certificate is manually added to the trust store of the device or application.
-
-Because we want our self-signed cert to be trusted however, we will need to manually add the self-signed certificate to our trusted keychains; those used by our browsers and operating systems.  We will also be using the self-signed certificate for our locally hosted webserver and handshake (wss) server.
-
-Please refer to your local chat bot for more information on create, using, and deploying self-signed certificates if this is all new to you.
-
-### Offline WHIP as well
-
-If using WHIP offline with VDO.Ninja, you can find the WHIP/WHEP handshake service below:
-
-https://github.com/steveseguin/whip
-
-You technically don't need the VDO.Ninja handshake service is just using WHIP/WHEP with VDO.Ninja, but having both of course is suggested.  The are seperate services, so they will need different sub-domain names, certs, etc.  Feel free to combine them at your own peril, but it would be possible to do without much effort. 
-
-### SSL is normally the problem...
-
-Just a note; if installing multiple end points and using self-signed certs with local DNS, be sure the SSL certs are made to support these domains
-
-For example, this is the solution one user found when trying to manage multiple sub domains with multiple offline VDO.Ninja-related services:
-
+```sh
+mkdir -p ~/vdo-local
+cd ~/vdo-local
+git clone https://github.com/steveseguin/offline_deployment.git
+cd offline_deployment
+bash install.sh
 ```
- I needed to generate a new set of certificates that included the new url's we are using.
-First I hade to  create the ninja.lan.ext file for openssl with the following setings:
 
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
-keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
-subjectAltName = @alt_names
+The installer installs the locked Node dependencies and downloads the VDO.Ninja revision recorded in `vdoninja-version.txt` into **this folder's `site/` directory**. It applies the existing self-hosting settings to that deployment copy:
 
-[alt_names]
-DNS.1 = ninja.lan
-DNS.2 = ws.ninja.lan
-DNS.3 = wss.ninja.lan
-DNS.4 = whip.ninja.lan
-DNS.5 = whep.ninja.lan 
-Then you run :
+- Secure signaling at the same address and port as the page.
+- The advanced routing protocol (`customWSS = false`, also selected by the browser's `wss2` URL option).
+- Salt `vdo.ninja`.
+- Public STUN/TURN disabled in the website by default, because this setup targets offline LAN use. See [optional hybrid use](#optional-hybrid-use-with-internet-access) to enable them per browser link.
 
-openssl x509 -req -in ninja.lan.csr -CA myCA.pem -CAkey myCA.key -CAcreateserial -out ninja.lan.crt -days 1825 -sha256 -extfile ninja.lan.ext
+It does not modify another VDO.Ninja checkout, install a system service, generate certificates, or change operating-system settings. It refuses to overwrite an existing `site/`; see [updating/recovering the website](docs/maintenance.md#update-the-website).
 
-Then make the changes to the servers buy adding the new key and cert:
-        key: fs.readFileSync(process.env.KEY_PATH  "./../certs/whip-ninja-lan/ninja.lan.key"), 
-        cert: fs.readFileSync(process.env.CERT_PATH  "./../certs/whip-ninja-lan/ninja.lan.crt")
+**Checkpoint:** the last output says `Website ready`, and `site/index.html` exists.
+
+## 4. Create your local certificates
+
+```sh
+node scripts/create-certificates.js 192.168.1.28
 ```
+
+If you also have a hostname that every device can resolve, include it now:
+
+```sh
+node scripts/create-certificates.js 192.168.1.28 studio.home.arpa
+```
+
+Choose one command for the initial creation. The helper includes the supplied addresses in the certificate's **Subject Alternative Names** (the names a client checks). It does not create DNS records. Pass addresses only, without `https://`, ports or paths.
+
+![Your local CA signs the server certificate. Install the public root certificate on devices; keep private keys on the server.](docs/images/certificate-trust.png)
+
+| Created file | Purpose | Share it? |
+|---|---|---|
+| `certs/rootCA.crt` | Public root certificate to trust on your devices | Yes, with your intended users |
+| `certs/rootCA.key` | Private key used to sign server certificates | **No** |
+| `certs/server.crt` | Server identity, signed by your CA | Public, but not the root users should install |
+| `certs/server.key` | Private key used by the HTTPS server | **No** |
+
+The helper preserves existing certificates by default. The root lasts 10 years and the server certificate 397 days. [Renew explicitly](docs/maintenance.md#renew-the-server-certificate) before expiry or when the address changes. Keep a secure backup of `certs/`, outside the website folder. The CA key can also be kept in a secure offline backup between renewals; the running server only needs its own key and certificate.
+
+**Checkpoint:** the helper prints the server addresses, expiry date, and root SHA-256 fingerprint. Save the fingerprint so you can compare it when installing the root on devices.
+
+## 5. Start the secure server
+
+Run these commands from `offline_deployment`:
+
+```sh
+export PORT=8443
+export WEB_ROOT="$PWD/site"
+export CERT_PATH="$PWD/certs/server.crt"
+export KEY_PATH="$PWD/certs/server.key"
+export UV_THREADPOOL_SIZE=2
+node server.js
+```
+
+Leave this terminal open. The website and handshake server are now on the **same port**. To stop the server, press **Ctrl+C**. The `export` settings apply to this terminal; repeat them in a new terminal or use the [optional startup service](docs/maintenance.md#start-at-boot).
+
+If your firewall blocks access, allow inbound TCP 8443 from your LAN using its normal administration tools. Do not disable the firewall. No router internet port-forwarding is required for devices on the same LAN.
+
+In a **second server terminal**, check the certificate and secure WebSocket connection:
+
+```sh
+cd ~/vdo-local/offline_deployment
+node scripts/check-connection.js https://192.168.1.28:8443/ certs/rootCA.crt
+```
+
+**Checkpoint:** both checks print `PASS`. This checks HTTPS and the WebSocket upgrade; it does not establish that media, the salt, or a phone app works.
+
+## 6. Trust the root and test two browsers
+
+Copy **only `certs/rootCA.crt`** to each device using a trusted transfer, such as USB or an existing secure file transfer. Compare its fingerprint with the server's value. Follow the [Windows, Android, iOS, macOS and Linux trust instructions](docs/certificates.md).
+
+1. Open `https://192.168.1.28:8443/` in the publishing device's browser. It should open without a certificate warning.
+2. Open `https://192.168.1.28:8443/?push=lancheck` and start the camera/microphone. Allow the browser's permission request.
+3. On a second device, open `https://192.168.1.28:8443/?view=lancheck`.
+4. Confirm both picture and sound. If a password is set, use the same one at both ends.
+
+Keep the local address in shared links. A link beginning `https://vdo.ninja/` loads the public site instead of this local copy. Stop these test streams when finished.
+
+**Checkpoint:** the second browser receives the first device's stream. Next, disconnect the network's internet uplink while keeping the LAN/Wi-Fi running, reload both pages, and repeat. Do this only when it will not interrupt other users. Phones may need cellular data disabled for a meaningful offline check.
+
+Basic camera/microphone push/view is the target. Features that explicitly contact external services still need those services; installing the website does not make every integration available offline.
+
+## 7. Connect the native app
+
+**Start by installing and trusting the public root on the phone**, as described in [device instructions](docs/certificates.md), then test the app with the settings below. No app certificate-import feature is needed in this guide. **Known Android limitation:** on a Pixel 4a running Android 13, app **5.0.103** still rejected the certificate after CA installation and a full app restart, while Steve confirmed Brave opened the same site without a certificate error. Installing the CA alone did not fix this app build. A local **5.0.104 candidate** now includes a tested Advanced Settings certificate exception for the selected custom WSS host and port. It is off by default, clears when the endpoint changes, and keeps encryption while skipping identity checks, including hostname and expiry. This is a development build, not a confirmed public release. See the [Flutter follow-up results](docs/flutter-handoff.md).
+
+Use these settings for the app test:
+
+| App field | Value for this guide |
+|---|---|
+| Handshake server | `wss://192.168.1.28:8443` |
+| Custom Salt | `vdo.ninja` |
+| TURN server | Leave at the app default for the initial same-LAN test; see the separate app behavior below |
+| WHIP output | Off for this handshake-server test |
+
+**The website and native app have separate STUN/TURN settings.** In the reviewed Flutter app, an empty TURN field or its placeholder fetches public TURN servers; it does **not** disable them. The website's offline setting does not configure the app. Internet-assisted app tests are not proof of disconnected operation.
+
+Enter the handshake address **first**, leave that field, then enter the salt. Older builds can replace the salt when the handshake field loses focus; recheck it before connecting. The local 5.0.104 candidate preserves an explicitly entered salt. An IP address is accepted. The certificate must cover that exact IP.
+
+For iOS, installing a root profile also requires explicitly enabling SSL trust. That platform path may work, but this exact app/server combination has not been device-verified here. See [iOS instructions](docs/certificates.md#iphone-and-ipad).
+
+For Marcos's existing Caddy setup, his external port is **443**, so his address remains `wss://192.168.1.28:443`. He needs to trust **Caddy's** root CA, not a new root generated by this helper. [Existing Caddy setups](docs/other-setups.md#already-using-caddy).
+
+The app's handshake field takes the plain `wss://...` address; do not append `&wss2=` there. `wss2` is a **browser URL option**. This server now implements the routed messages expected by the reviewed Flutter code, including requests without `from` and room listings. App 5.0.103 generated a viewer link with `wss=`; change that browser link option to `wss2=` for this server. The local 5.0.104 candidate corrects that link and passed direct publishing, room publishing, built-in microphone audio and recovery after a signaling-server restart. These functional results do not qualify smoothness or internet-disconnected operation.
+
+USB microphone and Android USB camera verification are deferred. Built-in microphone success does not establish USB support. When those checks resume, confirm the selected USB source at the receiving device; a moving local meter is not sufficient.
+
+## Optional hybrid use with internet access
+
+The prepared website keeps `session.configuration = {};`, disabling its automatic public STUN/TURN setup. This is intentional for offline use. **Keep that line unchanged.** The following browser URL options enable internet assistance for that link only; removing them restores the offline defaults.
+
+STUN helps a device discover its public address. TURN relays media when a direct connection cannot be established. Public STUN/TURN requires internet access; TURN media may leave the LAN. Neither option makes your private website or handshake server reachable from outside your network.
+
+For a simple STUN-assisted viewer test, replace the address and stream ID in:
+
+```text
+https://192.168.1.28:8443/?view=lancheck&stun=stun%3Astun.l.google.com%3A19302&turn=off
+```
+
+This enables Google STUN and leaves TURN off **in that browser**. It worked with Speedify in the recorded test, but STUN alone cannot traverse every network.
+
+For a relay fallback, use a TURN service you operate or are authorized to use:
+
+```text
+https://192.168.1.28:8443/?view=lancheck&stun=false&turn=USERNAME%3BPASSWORD%3Bturn%3Aturn.example.net%3A3478
+```
+
+Replace the example credentials and hostname. The decoded `turn` value is `USERNAME;PASSWORD;turn:turn.example.net:3478`; URL-encode the complete value, including special characters in credentials. This example disables separate STUN servers and explicitly configures TURN. For TURN over TLS, use `USERNAME;PASSWORD;turns:turn.example.net:443` instead. Use the ports supported by your service. TURN credentials in a link are visible to anyone receiving it; use credentials intended for those clients.
+
+Append `&relay` only when testing that the relay path itself works; omit it for normal direct-or-relay selection. Keep existing stream, password and `wss2` parameters. For two-browser publishing, add the desired options to both browser links (use `push=lancheck` for the publisher). For a native publisher, configure its TURN field separately; these URL options belong on the viewer link, not in the app's handshake field.
+
+A VPN can interfere with LAN addresses and `.local` discovery even when HTTPS/WSS connects. On the tested Pixel 4a, the offline viewer stalled with Speedify enabled; pausing Speedify restored direct LAN media. With Speedify still enabled, explicitly adding viewer STUN or TURN also restored media. The app having TURN enabled alone did not compensate for the viewer's unresolved local addresses. See [test evidence and limits](docs/validation.md#offline-and-hybrid-connectivity-follow-up).
+
+For genuinely offline operation, keep the defaults and establish a working LAN path, including checking VPN/client isolation. A local TURN relay is another possible deployment option, but is not included or validated by this guide. Public TURN cannot provide a fallback after the internet connection is removed.
+
+## What to do next
+
+- [Start at boot, renew certificates, update or uninstall](docs/maintenance.md).
+- [Troubleshoot by symptom](docs/troubleshooting.md).
+- [Optional Docker instructions](docs/docker.md).
+- [Advanced routing protocol and migration notes](docs/signaling-server-review.md).
+
+Older Raspberry Pi disk images and old copied installation commands may use different directories, certificates and ports. Use a fresh OS plus this guide for a new installation; do not assume an old image includes these changes. Existing deployments can keep their explicit `KEY_PATH`, `CERT_PATH` and `PORT`; `WEB_ROOT` now lets you select the website directory.
